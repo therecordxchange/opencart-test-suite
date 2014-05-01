@@ -1,8 +1,5 @@
 <?php
 
-// TODO: check for a better way to get the root of the opencart installation
-define('OC_ROOT',__DIR__ . '/../../../../../');
-
 class OpenCartTest extends PHPUnit_Framework_TestCase {
 	
 	protected $registry;
@@ -37,8 +34,6 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	}
 	
 	public function __construct() {
-		
-		$this->loadConfiguration();
 				
 		// Startup
 		require_once(DIR_SYSTEM . 'startup.php');
@@ -66,7 +61,51 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		// Database
 		$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 		$this->registry->set('db', $db);
-		
+                
+		// Recreating the database
+		$file = OC_ROOT . 'tests/opencart/opencart.sql';
+
+		$lines = file($file);
+
+		if ($lines) {
+			$sql = '';
+
+			foreach ($lines as $line) {
+				if ($line && (substr($line, 0, 2) != '--') && (substr($line, 0, 1) != '#')) {
+					$sql .= $line;
+
+					if (preg_match('/;\s*$/', $line)) {
+						$sql = str_replace("DROP TABLE IF EXISTS `oc_", "DROP TABLE IF EXISTS `" . DB_PREFIX, $sql);
+						$sql = str_replace("CREATE TABLE `oc_", "CREATE TABLE `" . DB_PREFIX, $sql);
+						$sql = str_replace("INSERT INTO `oc_", "INSERT INTO `" . DB_PREFIX, $sql);
+
+						$db->query($sql);
+
+						$sql = '';
+					}
+				}
+			}
+
+			$db->query("SET CHARACTER SET utf8");
+
+			$db->query("SET @@session.sql_mode = 'MYSQL40'");
+
+			$db->query("DELETE FROM `" . DB_PREFIX . "user` WHERE user_id = '1'");
+
+			$db->query("INSERT INTO `" . DB_PREFIX . "user` SET user_id = '1', user_group_id = '1', username = 'admin', salt = '" . $db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $db->escape(sha1($salt . sha1($salt . sha1('admin')))) . "', status = '1', email = '" . $db->escape('admin@localhost') . "', date_added = NOW()");
+
+			$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_email'");
+			$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_email', value = '" . $db->escape('admin@localhost') . "'");
+
+			$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_url'");
+			$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_url', value = '" . $db->escape($_SERVER['HTTP_HOST']) . "'");
+
+			$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_encryption'");
+			$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_encryption', value = '" . $db->escape(md5(mt_rand())) . "'");
+
+			$db->query("UPDATE `" . DB_PREFIX . "product` SET `viewed` = '0'");
+		}
+
 		// assume a HTTP connection
 		$store_query = $db->query("SELECT * FROM " . DB_PREFIX . "store WHERE REPLACE(`url`, 'www.', '') = '" . $db->escape('http://' . str_replace('www.', '', $_SERVER['HTTP_HOST']) . rtrim(dirname($_SERVER['PHP_SELF']), '/.\\') . '/') . "'");
 		
@@ -107,7 +146,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		$this->registry->set('response', $response);
 		
 		// Cache
-		$cache = new Cache();
+		$cache = new Cache('file');
 		$this->registry->set('cache', $cache);
 		
 		// Session
@@ -204,7 +243,8 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		// TODO: check if preactions are neccessary for testing purpouses...
 		
 		// SEO URL's
-		// $this->front->addPreAction(new Action('common/seo_url'));		
+		$this->front->addPreAction(new Action('common/seo_url'));		
+		
 		// Maintenance Mode
 		// $this->front->addPreAction(new Action('common/maintenance'));
 	}	
