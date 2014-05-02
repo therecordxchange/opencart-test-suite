@@ -35,18 +35,18 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	}
 	
 	public function __construct() {
-				
+		
 		// Startup
 		require_once(DIR_SYSTEM . 'startup.php');
 		
 		// Application Classes
-		require_once(DIR_SYSTEM . 'library/customer.php');
-		require_once(DIR_SYSTEM . 'library/affiliate.php');
-		require_once(DIR_SYSTEM . 'library/currency.php');
-		require_once(DIR_SYSTEM . 'library/tax.php');
-		require_once(DIR_SYSTEM . 'library/weight.php');
-		require_once(DIR_SYSTEM . 'library/length.php');
-		require_once(DIR_SYSTEM . 'library/cart.php');
+		require_once(modification(DIR_SYSTEM . 'library/customer.php'));
+		require_once(modification(DIR_SYSTEM . 'library/affiliate.php'));
+		require_once(modification(DIR_SYSTEM . 'library/currency.php'));
+		require_once(modification(DIR_SYSTEM . 'library/tax.php'));
+		require_once(modification(DIR_SYSTEM . 'library/weight.php'));
+		require_once(modification(DIR_SYSTEM . 'library/length.php'));
+		require_once(modification(DIR_SYSTEM . 'library/cart.php'));
 		
 		// Registry
 		$this->registry = new Registry();
@@ -151,7 +151,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		$this->registry->set('response', $response);
 		
 		// Cache
-		$cache = new Cache('file');
+		$cache = new Cache('file', -1);
 		$this->registry->set('cache', $cache);
 		
 		// Session
@@ -281,27 +281,6 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		return $property->getValue($this->response);
 		
 	}	
-	
-	/*
-	 * A Controller Object is returned, the actual action is not executed
-	 * 
-	 * @throws Exception if controller doesn't exist
-	 */
-	public function loadControllerByRoute($route) {
-		$action = new Action($route);
-		
-		// copied from front controller to resolve the action controller and return it:
-		if (file_exists($action->getFile())) {
-			require_once($action->getFile());
-				
-			$class = $action->getClass();
-		
-			return new $class($this->registry);				
-		}	
-
-		throw new Exception("Controller doesn't exist!");
-		
-	}
 	
 	public function dispatchAction($route) {
 		
