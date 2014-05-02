@@ -65,7 +65,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
                 
 		// Recreating the database
 		if (!self::$tablesCreated) {
-			$file = OC_ROOT . '../tests/opencart/opencart.sql';
+			$file = SQL_FILE;
 
 			$lines = file($file);
 
