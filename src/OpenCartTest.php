@@ -4,6 +4,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	
 	protected $registry;
 	protected $front;
+	protected static $tablesCreated = false;
 	
 	public static $_OPENCART = OC_ROOT;
 	
@@ -63,47 +64,51 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		$this->registry->set('db', $db);
                 
 		// Recreating the database
-		$file = OC_ROOT . 'tests/opencart/opencart.sql';
+		if (!self::$tablesCreated) {
+			$file = OC_ROOT . 'tests/opencart/opencart.sql';
 
-		$lines = file($file);
+			$lines = file($file);
 
-		if ($lines) {
-			$sql = '';
+			if ($lines) {
+				$sql = '';
 
-			foreach ($lines as $line) {
-				if ($line && (substr($line, 0, 2) != '--') && (substr($line, 0, 1) != '#')) {
-					$sql .= $line;
+				foreach ($lines as $line) {
+					if ($line && (substr($line, 0, 2) != '--') && (substr($line, 0, 1) != '#')) {
+						$sql .= $line;
 
-					if (preg_match('/;\s*$/', $line)) {
-						$sql = str_replace("DROP TABLE IF EXISTS `oc_", "DROP TABLE IF EXISTS `" . DB_PREFIX, $sql);
-						$sql = str_replace("CREATE TABLE `oc_", "CREATE TABLE `" . DB_PREFIX, $sql);
-						$sql = str_replace("INSERT INTO `oc_", "INSERT INTO `" . DB_PREFIX, $sql);
+						if (preg_match('/;\s*$/', $line)) {
+							$sql = str_replace("DROP TABLE IF EXISTS `oc_", "DROP TABLE IF EXISTS `" . DB_PREFIX, $sql);
+							$sql = str_replace("CREATE TABLE `oc_", "CREATE TABLE `" . DB_PREFIX, $sql);
+							$sql = str_replace("INSERT INTO `oc_", "INSERT INTO `" . DB_PREFIX, $sql);
 
-						$db->query($sql);
+							$db->query($sql);
 
-						$sql = '';
+							$sql = '';
+						}
 					}
 				}
+
+				$db->query("SET CHARACTER SET utf8");
+
+				$db->query("SET @@session.sql_mode = 'MYSQL40'");
+
+				$db->query("DELETE FROM `" . DB_PREFIX . "user` WHERE user_id = '1'");
+
+				$db->query("INSERT INTO `" . DB_PREFIX . "user` SET user_id = '1', user_group_id = '1', username = 'admin', salt = '" . $db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $db->escape(sha1($salt . sha1($salt . sha1('admin')))) . "', status = '1', email = '" . $db->escape('admin@localhost') . "', date_added = NOW()");
+
+				$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_email'");
+				$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_email', value = '" . $db->escape('admin@localhost') . "'");
+
+				$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_url'");
+				$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_url', value = '" . $db->escape($_SERVER['HTTP_HOST']) . "'");
+
+				$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_encryption'");
+				$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_encryption', value = '" . $db->escape(md5(mt_rand())) . "'");
+
+				$db->query("UPDATE `" . DB_PREFIX . "product` SET `viewed` = '0'");
 			}
-
-			$db->query("SET CHARACTER SET utf8");
-
-			$db->query("SET @@session.sql_mode = 'MYSQL40'");
-
-			$db->query("DELETE FROM `" . DB_PREFIX . "user` WHERE user_id = '1'");
-
-			$db->query("INSERT INTO `" . DB_PREFIX . "user` SET user_id = '1', user_group_id = '1', username = 'admin', salt = '" . $db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $db->escape(sha1($salt . sha1($salt . sha1('admin')))) . "', status = '1', email = '" . $db->escape('admin@localhost') . "', date_added = NOW()");
-
-			$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_email'");
-			$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_email', value = '" . $db->escape('admin@localhost') . "'");
-
-			$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_url'");
-			$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_url', value = '" . $db->escape($_SERVER['HTTP_HOST']) . "'");
-
-			$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_encryption'");
-			$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_encryption', value = '" . $db->escape(md5(mt_rand())) . "'");
-
-			$db->query("UPDATE `" . DB_PREFIX . "product` SET `viewed` = '0'");
+			
+			self::$tablesCreated = true;
 		}
 
 		// assume a HTTP connection
