@@ -35,6 +35,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	}
 	
 	public function __construct() {
+		parent::__construct();
 		
 		// Startup
 		require_once(DIR_SYSTEM . 'startup.php');
