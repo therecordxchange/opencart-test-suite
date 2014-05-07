@@ -6,11 +6,16 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	protected $front;
 	protected static $tablesCreated = false;
 	
-	public static $_OPENCART = OC_ROOT;
+	protected static function isAdmin() {
+		return preg_match('/^Admin/', get_called_class()) == true;
+	}
 	
-	public static function getConfigurationPath() {				
-		$admin = strpos(get_called_class(),"AdminTest");
-		return self::$_OPENCART . ($admin === false ? '' : 'admin/') . 'config.php' ;
+	protected static function getConfigurationPath() {				
+		if (self::isAdmin()) {
+			return CONFIG_ADMIN;
+		} else {
+			return CONFIG_CATALOG;
+		}
 	}
 	
 	public function __get($key) {
@@ -36,6 +41,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	
 	public function __construct() {
 		parent::__construct();
+		$this->loadConfiguration();
 		
 		// Startup
 		require_once(DIR_SYSTEM . 'startup.php');
@@ -61,7 +67,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		$this->registry->set('config', $config);
 		
 		// Database
-		$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+		$db = new DB(DB_TEST_DRIVER, DB_TEST_HOSTNAME, DB_TEST_USERNAME, DB_TEST_PASSWORD, DB_TEST_DATABASE);
 		$this->registry->set('db', $db);
                 
 		// Recreating the database
@@ -214,10 +220,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		
 		// Document
 		$this->registry->set('document', new Document());
-		
-		// Customer
-		$this->registry->set('customer', new Customer($this->registry));
-		
+				
 		// Affiliate
 		$this->registry->set('affiliate', new Affiliate($this->registry));
 		
@@ -237,28 +240,36 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		// Length
 		$this->registry->set('length', new Length($this->registry));
 		
-		// Cart
-		$this->registry->set('cart', new Cart($this->registry));
-		
 		// Encryption
 		$this->registry->set('encryption', new Encryption($config->get('config_encryption')));
 		
 		// Front Controller
 		$this->front = new Front($this->registry);
 		
-		// TODO: check if preactions are neccessary for testing purpouses...
+		$this->request->server['REMOTE_ADDR'] = '127.0.0.1';
 		
-		// SEO URL's
-		$this->front->addPreAction(new Action('common/seo_url'));		
+		if (self::isAdmin()) {
+			$this->request->get['token'] = 'token';
+			$this->session->data['token'] = 'token';
+			
+			$user = new User($this->registry);
+			$this->registry->set('user', $user);
+			$user->login(ADMIN_USERNAME, ADMIN_PASSWORD);
+			
+			$this->front->addPreAction(new Action('common/login/check'));
+			$this->front->addPreAction(new Action('error/permission/check'));
+		} else {
+			$this->registry->set('cart', new Cart($this->registry));
+			$this->registry->set('customer', new Customer($this->registry));
+			
+			$this->front->addPreAction(new Action('common/seo_url'));
+		}
 		
 		// Maintenance Mode
 		// $this->front->addPreAction(new Action('common/maintenance'));
 	}	
 	
 	public function customerLogin($user,$password,$override=false) {
-		
-		// set a REMOTE_ADDR for the customer ...
-		$this->request->server['REMOTE_ADDR'] = '127.0.0.1';
 		$logged = $this->customer->login($user,$password,$override);		
 				
 		if (!$logged) {
