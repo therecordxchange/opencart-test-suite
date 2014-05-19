@@ -28,6 +28,10 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	
 	public function loadConfiguration() {
 		
+		if (defined('HTTP_SERVER')) {
+			return;
+		}
+		
 		// either load admin or catalog config.php		
 		$path = self::getConfigurationPath();
 		
@@ -67,7 +71,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		$this->registry->set('config', $config);
 		
 		// Database
-		$db = new DB(DB_TEST_DRIVER, DB_TEST_HOSTNAME, DB_TEST_USERNAME, DB_TEST_PASSWORD, DB_TEST_DATABASE);
+		$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 		$this->registry->set('db', $db);
                 
 		// Recreating the database
