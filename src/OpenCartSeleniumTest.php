@@ -72,7 +72,7 @@ class OpenCartSeleniumTest extends PHPUnit_Extensions_Selenium2TestCase {
 
 				$db->query("DELETE FROM `" . DB_PREFIX . "user` WHERE user_id = '1'");
 
-				$db->query("INSERT INTO `" . DB_PREFIX . "user` SET user_id = '1', user_group_id = '1', username = 'admin', salt = '" . $db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $db->escape(sha1($salt . sha1($salt . sha1('admin')))) . "', status = '1', email = '" . $db->escape('admin@localhost') . "', date_added = NOW()");
+				$db->query("INSERT INTO `" . DB_PREFIX . "user` SET user_id = '1', user_group_id = '1', username = '" . ADMIN_USERNAME . "', salt = '" . $db->escape($salt = substr(md5(uniqid(rand(), true)), 0, 9)) . "', password = '" . $db->escape(sha1($salt . sha1($salt . sha1(ADMIN_PASSWORD)))) . "', status = '1', email = '" . $db->escape('admin@localhost') . "', date_added = NOW()");
 
 				$db->query("DELETE FROM `" . DB_PREFIX . "setting` WHERE `key` = 'config_email'");
 				$db->query("INSERT INTO `" . DB_PREFIX . "setting` SET `group` = 'config', `key` = 'config_email', value = '" . $db->escape('admin@localhost') . "'");
@@ -100,6 +100,26 @@ class OpenCartSeleniumTest extends PHPUnit_Extensions_Selenium2TestCase {
 		
 		// cannot use this now. Mail class is triggering errors.
 		//$this->assertEmpty($errorLog, $errorLog);
+	}
+	
+	private function waitToAppearAndClick($cssSelector, $timeout = 3000) {
+		$this->waitUntil(function() use ($cssSelector) {
+			$element = $this->byCssSelector($cssSelector);
+			
+			if ($element->displayed()) {
+				return true;
+			}
+		}, $timeout);
+		
+		$this->byCssSelector($cssSelector)->click();
+	}
+	
+	private function waitToLoad($title, $timeout = 3000) {
+		$this->waitUntil(function() use ($title) {
+			if (strpos($this->title(), $title) !== false) {
+				return true;
+			}
+		}, $timeout);
 	}
 	
 }
