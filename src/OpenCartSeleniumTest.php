@@ -102,7 +102,7 @@ class OpenCartSeleniumTest extends PHPUnit_Extensions_Selenium2TestCase {
 		//$this->assertEmpty($errorLog, $errorLog);
 	}
 	
-	private function waitToAppearAndClick($cssSelector, $timeout = 3000) {
+	protected function waitToAppearAndClick($cssSelector, $timeout = 3000) {
 		$this->waitUntil(function() use ($cssSelector) {
 			$element = $this->byCssSelector($cssSelector);
 			
@@ -114,7 +114,7 @@ class OpenCartSeleniumTest extends PHPUnit_Extensions_Selenium2TestCase {
 		$this->byCssSelector($cssSelector)->click();
 	}
 	
-	private function waitToLoad($title, $timeout = 3000) {
+	protected function waitToLoad($title, $timeout = 3000) {
 		$this->waitUntil(function() use ($title) {
 			if (strpos($this->title(), $title) !== false) {
 				return true;
