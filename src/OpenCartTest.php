@@ -243,6 +243,9 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		
 		// Length
 		$this->registry->set('length', new Length($this->registry));
+
+		// Event
+		$this->registry->set('event', new Event($this->registry));
 		
 		// Encryption
 		$this->registry->set('encryption', new Encryption($config->get('config_encryption')));
