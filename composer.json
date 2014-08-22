@@ -3,7 +3,7 @@
     "description": "Testing suite for OpenCart",
     "require": {
         "phpunit/phpunit": "4.0.*",
-        "phpunit/phpunit-selenium": ">=1.2"
+        "phpunit/phpunit-selenium": "1.2.12"
     },
     "license": "GPL-3.0",
     "authors": [
