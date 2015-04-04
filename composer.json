@@ -1,5 +1,5 @@
 {
-    "name": "welfordmedia/opencart-test-suite",
+    "name": "openbaypro/opencart-test-suite",
     "description": "Testing suite for OpenCart",
     "require": {
         "phpunit/phpunit": "4.0.*",
