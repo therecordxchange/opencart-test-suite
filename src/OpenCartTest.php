@@ -34,7 +34,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		
 		// either load admin or catalog config.php		
 		$path = self::getConfigurationPath();
-		
+//print "path:$path\n";		exit;
 		// Configuration
 		if (file_exists($path)) {
 			require_once($path);
@@ -45,19 +45,31 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 	
 	public function __construct() {
 		parent::__construct();
-		$this->loadConfiguration();
+
+                $this->loadConfiguration();
 		
-		// Startup
-		require_once(DIR_SYSTEM . 'startup.php');
-		
-		// Application Classes
-		require_once(modification(DIR_SYSTEM . 'library/customer.php'));
-		require_once(modification(DIR_SYSTEM . 'library/affiliate.php'));
-		require_once(modification(DIR_SYSTEM . 'library/currency.php'));
-		require_once(modification(DIR_SYSTEM . 'library/tax.php'));
-		require_once(modification(DIR_SYSTEM . 'library/weight.php'));
-		require_once(modification(DIR_SYSTEM . 'library/length.php'));
-		require_once(modification(DIR_SYSTEM . 'library/cart.php'));
+                // VirtualQMOD
+                if(defined('USE_VQMOD')) {
+                    require_once(APP_ROOT . '/vqmod/vqmod.php');
+                    VQMod::bootup();
+
+                    // VQMODDED Startup
+                    require_once(VQMod::modCheck(DIR_SYSTEM . 'startup.php'));
+                }
+                else {
+
+                    // Startup
+                    require_once(DIR_SYSTEM . 'startup.php');
+
+                    // Application Classes
+                    require_once(modification(DIR_SYSTEM . 'library/customer.php'));
+                    require_once(modification(DIR_SYSTEM . 'library/affiliate.php'));
+                    require_once(modification(DIR_SYSTEM . 'library/currency.php'));
+                    require_once(modification(DIR_SYSTEM . 'library/tax.php'));
+                    require_once(modification(DIR_SYSTEM . 'library/weight.php'));
+                    require_once(modification(DIR_SYSTEM . 'library/length.php'));
+                    require_once(modification(DIR_SYSTEM . 'library/cart.php'));
+                }
 		
 		// Registry
 		$this->registry = new Registry();
@@ -123,14 +135,15 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		}
 
 		// assume a HTTP connection
-		$store_query = $db->query("SELECT * FROM " . DB_PREFIX . "store WHERE REPLACE(`url`, 'www.', '') = '" . $db->escape('http://' . str_replace('www.', '', $_SERVER['HTTP_HOST']) . rtrim(dirname($_SERVER['PHP_SELF']), '/.\\') . '/') . "'");
+                $sql = "SELECT * FROM " . DB_PREFIX . "store WHERE REPLACE(`url`, 'www.', '') = '" . $db->escape('http://' . str_replace('www.', '', $_SERVER['HTTP_HOST']) . rtrim(dirname($_SERVER['PHP_SELF']), '/.\\') . '/') . "'";
+		$store_query = $db->query($sql);
 		
 		if ($store_query->num_rows) {
 			$config->set('config_store_id', $store_query->row['store_id']);
 		} else {
 			$config->set('config_store_id', 0);
 		}
-		
+
 		// Settings
 		$query = $db->query("SELECT * FROM " . DB_PREFIX . "setting WHERE store_id = '0' OR store_id = '" . (int)$config->get('config_store_id') . "' ORDER BY store_id ASC");
 		
@@ -155,8 +168,9 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		$request = new Request();
 		$this->registry->set('request', $request);
 		
-		// Response
-		$response = new Response();
+		// Response - Using Test Response - Redirects are disabled.
+		$response = new TestResponse();
+                
 		$response->addHeader('Content-Type: text/html; charset=utf-8');
 		$response->setCompression($config->get('config_compression'));
 		$this->registry->set('response', $response);
@@ -219,7 +233,9 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		
 		// Language
 		$language = new Language($languages[$code]['directory']);
-		$language->load($languages[$code]['filename']);
+		//$language->load($languages[$code]['filename']);
+                $language->load($languages[$code]['directory']);
+                
 		$this->registry->set('language', $language);
 		
 		// Document
@@ -250,9 +266,17 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		// Encryption
 		$this->registry->set('encryption', new Encryption($config->get('config_encryption')));
 		
+                // Log
+                $this->registry->set('log', new Log($config->get('config_error_filename')));                
+                
 		// Front Controller
 		$this->front = new Front($this->registry);
 		
+                //Codeigniter Helpers
+                foreach (glob(DIR_SYSTEM . "helper/*_helper.php") as $filename) {
+                    require_once($filename);
+                }
+                
 		$this->request->server['REMOTE_ADDR'] = '127.0.0.1';
 		
 		if (self::isAdmin()) {
@@ -271,7 +295,6 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 			
 			$this->front->addPreAction(new Action('common/seo_url'));
 		}
-		
 		// Maintenance Mode
 		// $this->front->addPreAction(new Action('common/maintenance'));
 	}	
@@ -330,5 +353,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 		
 	}
 	
-		
+	public function testStartup() {
+            return true;
+	}		
 }
