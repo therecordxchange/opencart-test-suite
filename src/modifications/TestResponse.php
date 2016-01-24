@@ -1,18 +1,23 @@
 <?php
+/**
+ * Need to emulate browser output for controllers
+ */
 class TestResponse extends Response {
 	
 	private $headers = array();
 	private $level = 0;
 	private $output;
+        private $redirect = false;
 
 	public function addHeader($header) {
 		$this->headers[] = $header;
 	}
 
 	public function redirect($url, $status = 302) {
-                print "\nRedirect called to: [$url]\n";
-		//header('Location: ' . str_replace(array('&amp;', "\n", "\r"), array('&', '', ''), $url), true, $status);
-		exit();
+                $trace = debug_backtrace();
+                $caller = $trace[1];
+                $this->setOutput("\nRedirect called to: [$url] by [{$caller['function']}]\n");
+                $this->redirect = true;
 	}
 
 	public function setCompression($level) {
@@ -20,7 +25,9 @@ class TestResponse extends Response {
 	}
 
 	public function setOutput($output) {
-		$this->output = $output;
+                if(!$this->redirect) {
+                    $this->output = $output;
+                }
 	}
 
 	public function getOutput() {
