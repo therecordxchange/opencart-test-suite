@@ -315,6 +315,11 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
     {
         $logged = $this->customer->login($user, $password, $override);
 
+        //required for ACL 
+        //@see oc_events
+        //@see catalog/controller/trx/auth.php
+        $this->event->trigger('post.customer.login');
+        
         if (!$logged) {
             throw new Exception('Could not login customer');
         }
@@ -347,6 +352,11 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
         } else {
             $action = new Action('common/home');
         }
+
+        // Set request:
+        $request = $this->registry->get('request');
+        $request->get['route'] = $route;
+        $this->registry->set('request', $request);
 
         // Dispatch
         $this->front->dispatch($action, new Action('error/not_found'));
