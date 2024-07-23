@@ -1,6 +1,6 @@
 <?php
 
-class OpenCartTest extends PHPUnit_Framework_TestCase {
+class OpenCartTest extends \PHPUnit\Framework\TestCase {
 
     protected $registry;
     protected $front;
@@ -37,7 +37,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
             return;
         }
 
-        // either load admin or catalog config.php		
+        // either load admin or catalog config.php
         $path = self::getConfigurationPath();
 //print "path:$path\n";		exit;
         // Configuration
@@ -48,9 +48,9 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
         }
     }
 
-    public function __construct()
+    public function init() : void
     {
-        parent::__construct();
+        // parent::__construct();
 
         $this->loadConfiguration();
 
@@ -77,7 +77,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
         }
 
         // Registry
-        $this->registry = new Registry();
+        $this->registry = new \Registry();
 
         // Loader
         $loader = new Loader($this->registry);
@@ -272,13 +272,16 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
         $this->registry->set('event', new Event($this->registry));
 
         // Mail
-        $this->registry->set('mail', new TestMail());
+        $this->registry->set('mail', new TestMail($this->registry));
 
         // Encryption
         $this->registry->set('encryption', new Encryption($config->get('config_encryption')));
 
         // Log
         $this->registry->set('log', new Log($config->get('config_error_filename')));
+
+        //TRX Custom - filemanager provider
+        $this->registry->set('filemanager', new TrxFileManager($this->registry));
 
         // Front Controller
         $this->front = new Front($this->registry);
