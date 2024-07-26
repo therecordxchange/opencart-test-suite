@@ -1,10 +1,17 @@
 <?php
 
-class OpenCartTest extends PHPUnit_Framework_TestCase {
+abstract class OpenCartTest extends \PHPUnit\Framework\TestCase {
 
     protected $registry;
     protected $front;
     protected static $tablesCreated = false;
+
+    public function __construct(string $name = '')
+    {
+        parent::__construct($name);
+
+        $this->init();
+    }
 
     protected static function isAdmin()
     {
@@ -48,10 +55,8 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
         }
     }
 
-    public function __construct()
+    public function init() : void
     {
-        parent::__construct();
-
         $this->loadConfiguration();
 
         // VirtualQMOD
@@ -191,6 +196,10 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
         $session = new Session();
         $this->registry->set('session', $session);
 
+        // TRX Custom - filemanager provider
+        $filemanager = new TrxFileManager($this->registry);
+        $this->registry->set('filemanager', $filemanager);
+
         // Language Detection
         $languages = array();
 
@@ -272,7 +281,7 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
         $this->registry->set('event', new Event($this->registry));
 
         // Mail
-        $this->registry->set('mail', new TestMail());
+        $this->registry->set('mail', new TestMail($this->registry));
 
         // Encryption
         $this->registry->set('encryption', new Encryption($config->get('config_encryption')));
@@ -377,10 +386,4 @@ class OpenCartTest extends PHPUnit_Framework_TestCase {
 
         return $this->$model;
     }
-
-    public function testStartup()
-    {
-        return true;
-    }
-
 }

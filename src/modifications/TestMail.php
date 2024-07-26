@@ -42,7 +42,7 @@ class TestMail extends Mail {
         return $this->attachments;
     }
 
-    public function send()
+    public function send() : bool
     {
         if (!$this->to) {
             trigger_error('Error: E-Mail to required!');
