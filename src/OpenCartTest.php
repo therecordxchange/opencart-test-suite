@@ -1,10 +1,17 @@
 <?php
 
-class OpenCartTest extends \PHPUnit\Framework\TestCase {
+abstract class OpenCartTest extends \PHPUnit\Framework\TestCase {
 
     protected $registry;
     protected $front;
     protected static $tablesCreated = false;
+
+    public function __construct(string $name = '')
+    {
+        parent::__construct($name);
+
+        $this->init();
+    }
 
     protected static function isAdmin()
     {
@@ -48,7 +55,7 @@ class OpenCartTest extends \PHPUnit\Framework\TestCase {
         }
     }
 
-    public function setUp() : void
+    public function init() : void
     {
         $this->loadConfiguration();
 
@@ -379,10 +386,4 @@ class OpenCartTest extends \PHPUnit\Framework\TestCase {
 
         return $this->$model;
     }
-
-    public function testStartup()
-    {
-        return true;
-    }
-
 }
